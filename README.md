@@ -9,11 +9,22 @@
 
 ## Requirements
 
-- Python environment 3.9
+- Install conda for your OS, then create a new conda environment:
 
 ```
-conda env create --name face_anim --file=environments.yml
+conda env create --name face_anim --file=environment.yml
+```
+
+- Activate the conda env:
+
+```
 conda activate face_anim
+```
+
+- Run setup to download the pre-trained models:
+
+```
+sh setup.sh
 ```
 
 - ffmpeg (https://ffmpeg.org/download.html)
@@ -34,9 +45,13 @@ pip install -r requirements.txt
 npm i
 ```
 
+## Dockerfile
+
+There is a dockerfile, if you wish to create a complete image with all the needed libraries, and makes it much easier for you.
+
 ## Pre-trained Models
 
-Download the following pre-trained models to `examples/ckpt` folder for testing your own animation.
+Download the following pre-trained models to `examples/ckpt` folder for testing your own animation. (if you followed the previous step of setup.sh you don't need to do this again)
 
 |               Model               |                                     Link to the model                                      |
 | :-------------------------------: | :----------------------------------------------------------------------------------------: |

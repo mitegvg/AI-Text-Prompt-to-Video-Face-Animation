@@ -17,6 +17,7 @@ output*
 examples/output/
 examples/dump/
 examples/ckpt/
+examples/prompt.wav
 # Native
 *.orig.*
 *.jks
