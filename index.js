@@ -19,10 +19,9 @@ app.get("/generate/:prompt/:style", async function (req, res) {
   );
   console.log("openaiRes", openaiRes);
   await createSound(openaiRes, req.params.style);
-  const pythonProcess = spawn(
-    "/opt/miniconda3/envs/makeittalk_env/bin/python",
-    ["./main_end2end.py"]
-  );
+  const pythonProcess = spawn("/opt/miniconda3/envs/face_anim/bin/python", [
+    "./main_end2end.py",
+  ]);
   pythonProcess.stdout.on("data", (data) => {
     console.log(data.toString());
   });

@@ -46,13 +46,10 @@ const receiveMessagesFromQueue = async () => {
     console.log("PROCESSING -> ", response.Body);
     const title = data.text.replaceAll(" ", "-");
     await createSound(data.text, "Chris Hemsworth");
-    const pythonProcess = spawn(
-      "/opt/miniconda3/envs/makeittalk_env/bin/python",
-      [
-        "./main_end2end.py",
-        "--jpg=" + data.name + "-" + data.scene + "-poster.jpg",
-      ]
-    );
+    const pythonProcess = spawn("/opt/miniconda3/envs/face_anim/bin/python", [
+      "./main_end2end.py",
+      "--jpg=" + data.name + "-" + data.scene + "-poster.jpg",
+    ]);
     pythonProcess.stdout.on("data", (data) => {
       console.log(data.toString());
     });
