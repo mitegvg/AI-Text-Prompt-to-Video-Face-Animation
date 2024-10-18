@@ -13,11 +13,12 @@ const fs = require("fs");
 const REGION = "us-east-1"; //e.g. "us-east-1"
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
+const QUEUE_URL = process.env.QUEUE_URL;
+const BUCKET_NAME = process.env.BUCKET_NAME;
 
 const receiveMessagesFromQueue = async () => {
   try {
-    const queueURL =
-      "https://sqs.us-east-1.amazonaws.com/161906190146/TenderTalkVideoCacheGeneration";
+    const queueURL = QUEUE_URL;
 
     const client = new SQSClient({
       region: REGION,
@@ -78,33 +79,38 @@ const receiveMessagesFromQueue = async () => {
 // Reading from the local file
 // sending to s3
 const readSendS3 = async (videoTitle) => {
-  const s3 = new S3Client({
-    region: REGION,
-    credentials: {
-      accessKeyId: AWS_ACCESS_KEY_ID,
-      secretAccessKey: AWS_SECRET_ACCESS_KEY,
-    },
-  });
-  const data = fs.readFileSync(
-    path.resolve(__dirname, "../../examples/output/prompt.mp4")
-  );
+  try {
+    const s3 = new S3Client({
+      region: REGION,
+      credentials: {
+        accessKeyId: AWS_ACCESS_KEY_ID,
+        secretAccessKey: AWS_SECRET_ACCESS_KEY,
+      },
+    });
+    const data = fs.readFileSync(
+      path.resolve(__dirname, "../../examples/output/prompt.mp4")
+    );
 
-  var params = {
-    Body: Buffer.from(data, "binary"),
-    ContentType: "video/mp4",
-    Bucket: "tendertalk-videos",
-    Key: videoTitle + ".mp4",
-    ServerSideEncryption: "AES256",
-    StorageClass: "STANDARD_IA",
-  };
-  console.log("params", params);
-  const s3command = new PutObjectCommand(params);
-  const s3Object = await s3.send(s3command);
-  console.log("s3Object saved", s3Object);
-  fs.unlink(
-    path.resolve(__dirname, "../../examples/output/prompt.mp4"),
-    (res) => console.log(res)
-  );
+    var params = {
+      Body: Buffer.from(data, "binary"),
+      ContentType: "video/mp4",
+      Bucket: BUCKET_NAME,
+      Key: videoTitle + ".mp4",
+      ServerSideEncryption: "AES256",
+      StorageClass: "STANDARD_IA",
+    };
+    console.log("params", params);
+    const s3command = new PutObjectCommand(params);
+    const s3Object = await s3.send(s3command);
+    console.log("s3Object saved", s3Object);
+    fs.unlink(
+      path.resolve(__dirname, "../../examples/output/prompt.mp4"),
+      (res) => console.log(res)
+    );
+  } catch (e) {
+    console.log(e);
+    return;
+  }
 };
 
 module.exports = { receiveMessagesFromQueue, readSendS3 };
