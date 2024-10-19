@@ -24,7 +24,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation as R
 from scipy.signal import savgol_filter
 
-device = torch.device("cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Speaker_aware_branch():
 

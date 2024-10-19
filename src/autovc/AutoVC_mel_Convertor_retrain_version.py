@@ -79,7 +79,7 @@ class AutoVC_mel_Convertor():
             assert len_pad >= 0
             return np.pad(x, ((0, len_pad), (0, 0)), 'constant'), len_pad
 
-        device = torch.device("cpu")
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(device)
         G = Generator(16, 256, 512, 16).eval().to(device)
         g_checkpoint = torch.load(autovc_model_path, map_location=device)
@@ -205,7 +205,7 @@ class AutoVC_mel_Convertor():
             assert len_pad >= 0
             return np.pad(x, ((0, len_pad), (0, 0)), 'constant'), len_pad
 
-        device = torch.device("cpu")
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         G = Generator(16, 256, 512, 16).eval().to(device)
 
         g_checkpoint = torch.load(autovc_model_path, map_location=device)

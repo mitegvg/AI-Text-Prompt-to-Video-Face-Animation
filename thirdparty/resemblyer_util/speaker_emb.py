@@ -4,7 +4,7 @@ import torch
 
 
 def get_spk_emb(audio_file_dir, segment_len=960000):
-    device = torch.device("cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     resemblyzer_encoder = VoiceEncoder(device=device)
 
     wav = preprocess_wav(audio_file_dir)

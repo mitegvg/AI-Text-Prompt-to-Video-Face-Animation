@@ -19,7 +19,7 @@ from util.utils import Record
 from util.icp import icp
 import numpy as np
 
-device = torch.device("cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class Audio2landmark_model():

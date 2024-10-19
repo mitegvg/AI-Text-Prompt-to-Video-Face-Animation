@@ -17,7 +17,7 @@ from util.utils import get_n_params
 import numpy as np
 import pickle
 
-device = torch.device("cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class Audio2landmark_model():

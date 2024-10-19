@@ -17,7 +17,7 @@ import torch.nn.functional as F
 import copy
 import numpy as np
 
-device = torch.device("cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 AUDIO_FEAT_SIZE = 161
 FACE_ID_FEAT_SIZE = 204

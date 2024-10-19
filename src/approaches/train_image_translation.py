@@ -24,7 +24,7 @@ from thirdparty.AdaptiveWingLoss.utils.utils import get_preds_fromhm
 
 import face_alignment
 
-device = torch.device("cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Image_translation_block():
 

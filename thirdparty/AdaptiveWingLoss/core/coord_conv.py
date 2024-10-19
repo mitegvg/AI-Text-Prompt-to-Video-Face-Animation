@@ -3,7 +3,7 @@ import torch.nn as nn
 
 
 
-device = torch.device("cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class AddCoordsTh(nn.Module):
     def __init__(self, x_dim=64, y_dim=64, with_r=False, with_boundary=False):
