@@ -15,6 +15,7 @@ const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
 const QUEUE_URL = process.env.QUEUE_URL;
 const BUCKET_NAME = process.env.BUCKET_NAME;
+const STORAGE_ENDPOINT = process.env.STORAGE_ENDPOINT;
 
 const receiveMessagesFromQueue = async () => {
   try {
@@ -32,7 +33,7 @@ const receiveMessagesFromQueue = async () => {
       MaxNumberOfMessages: 1,
       MessageAttributeNames: ["All"],
       QueueUrl: queueURL,
-      VisibilityTimeout: 10000,
+      VisibilityTimeout: 3600,
       WaitTimeSeconds: 0,
     };
     const command = new ReceiveMessageCommand(input);
@@ -44,9 +45,21 @@ const receiveMessagesFromQueue = async () => {
       return;
     }
     const data = JSON.parse(response.Messages[0].Body);
-    console.log("PROCESSING -> ", response.Body);
-    const title = data.text.replaceAll(" ", "-");
-    await createSound(data.text, "Chris Hemsworth");
+    console.log("PROCESSING -> ", response.Messages[0].MessageId);
+    const title = data.text.replaceAll(" ", "-").replaceAll("/", "");
+    //const soundTitle = data.sentence.replaceAll(" ", "-").replaceAll("/", "");
+    const id = data.id;
+    const url = `${STORAGE_ENDPOINT}/${id}-${encodeURIComponent(title)}.mp3`;
+
+    const sound = await getSound(url);
+
+    if (!sound) {
+      console.log("No sound found.. skipping");
+      setTimeout(() => receiveMessagesFromQueue(), 10000);
+      return;
+    }
+
+    // spawn new process for the video compilation
     const pythonProcess = spawn("python", [
       "./main_end2end.py",
       "--jpg=" + data.name + "-" + data.scene + "-poster.jpg",
@@ -74,6 +87,26 @@ const receiveMessagesFromQueue = async () => {
     console.log(e);
     setTimeout(() => receiveMessagesFromQueue(), 10000);
   }
+};
+
+//Get sound to file
+const getSound = (url) => {
+  return new Promise((resolve) => {
+    var file = fs.createWriteStream("examples/output.mp3");
+    var request = https
+      .get(url, function (response) {
+        response.pipe(file);
+        file.on("finish", () => {
+          file.close();
+          resolve(true);
+          console.log("Download Completed");
+        });
+      })
+      .catch((e) => {
+        console.log(e);
+        resolve(false);
+      });
+  });
 };
 
 // Reading from the local file
