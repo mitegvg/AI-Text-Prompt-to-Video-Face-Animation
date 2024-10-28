@@ -6,6 +6,7 @@ const {
 const { Readable } = require("stream");
 const fs = require("fs");
 const Lame = require("node-lame").Lame;
+const path = require("path");
 
 // Set the AWS Region.
 const REGION = "us-east-1"; //e.g. "us-east-1"
@@ -25,6 +26,7 @@ const pollyClient = new PollyClient({
 let i = 0;
 
 const createSound = (prompt, style) => {
+  console.log("creating sound", prompt);
   return new Promise(async (resolve) => {
     const params = {
       Text: prompt,
@@ -39,11 +41,15 @@ const createSound = (prompt, style) => {
       const data = await pollyClient.send(new SynthesizeSpeechCommand(params));
 
       if (data.AudioStream instanceof Readable) {
-        data.AudioStream.pipe(fs.createWriteStream(`examples/output.mp3`));
+        data.AudioStream.pipe(
+          fs.createWriteStream(
+            path.resolve(__dirname, `../../examples/output.mp3`)
+          )
+        );
         setTimeout(() => {
           const decoder = new Lame({
-            output: `examples/prompt.wav`,
-          }).setFile("examples/output.mp3");
+            output: path.resolve(__dirname, `../../examples/prompt.wav`),
+          }).setFile(path.resolve(__dirname, `../../examples/output.mp3`));
           console.log("decoding sound");
           decoder
             .decode()

@@ -74,7 +74,7 @@ img =cv2.imread('examples/' + opt_parser.jpg)
 predictor = face_alignment.FaceAlignment(face_alignment.LandmarksType.THREE_D, device='cpu', flip_input=True)
 shapes = predictor.get_landmarks(img)
 if (not shapes or len(shapes) != 1):
-    print('Cannot detect face landmarks. Exit.')
+    print('Cannot detect face landmarks. Exit.', flush=True)
     exit(-1)
 shape_3d = shapes[0]
 
@@ -176,11 +176,11 @@ for i in range(0,len(fls)):
     fl = fl.reshape((-1, 68, 3))
 
     print("STEP 6: Imag2image translation", flush=True)
-    print("starting image gen")
+    print("starting image gen", flush=True)
     model = Image_translation_block(opt_parser, single_test=True)
     with torch.no_grad():
         model.single_test(jpg=img, fls=fl, filename=ains[0], prefix=opt_parser.jpg.split('.')[0], image_width=opt_parser.image_width, image_height=opt_parser.image_height)
-        print('finish image2image gen')
+        print('finish image2image gen', flush=True)
     print(fls[i])
     os.remove(os.path.join('examples', fls[i]))
 os.remove(os.path.join('examples','full.mp4'))

@@ -44,7 +44,7 @@ const receiveMessagesFromQueue = async () => {
       return;
     }
     const data = JSON.parse(response.Messages[0].Body);
-    console.log("PROCESSING -> ", response.Body);
+    console.log("PROCESSING -> ", response.Messages[0].MessageId);
     const title = data.text.replaceAll(" ", "-");
     await createSound(data.text, "Chris Hemsworth");
     const pythonProcess = spawn("python", [
