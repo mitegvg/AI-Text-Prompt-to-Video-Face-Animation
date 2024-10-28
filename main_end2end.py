@@ -25,6 +25,7 @@ from scipy.signal import savgol_filter
 
 from src.approaches.train_audio2landmark import Audio2landmark_model
 
+print("Imports done", flush=True)
 default_head_name = 'picture.jpg'
 ADD_NAIVE_EYE = True
 CLOSE_INPUT_FACE_MOUTH = False
@@ -68,6 +69,7 @@ parser.add_argument('--lambda_laplacian_smooth_loss', default=1.0, type=float)
 parser.add_argument('--use_11spk_only', default=False, action='store_true')
 
 opt_parser = parser.parse_args()
+print(opt_parser, flush=True)
 
 print("STEP 1: preprocess input single image", flush=True)
 img =cv2.imread('examples/' + opt_parser.jpg)

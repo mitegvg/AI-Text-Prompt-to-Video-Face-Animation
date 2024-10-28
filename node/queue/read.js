@@ -46,6 +46,17 @@ const receiveMessagesFromQueue = async () => {
     const data = JSON.parse(response.Messages[0].Body);
     console.log("PROCESSING -> ", response.Messages[0].MessageId);
     const title = data.text.replaceAll(" ", "-");
+    const image = fs.existsSync(
+      path.resolve(
+        __dirname,
+        `../../examples/${data.name}-${data.scene}-poster.jpg`
+      )
+    );
+    if (!image) {
+      console.log("image not found");
+      return;
+    }
+
     await createSound(data.text, "Chris Hemsworth");
     const pythonProcess = spawn("python", [
       "./main_end2end.py",
@@ -56,10 +67,11 @@ const receiveMessagesFromQueue = async () => {
     });
 
     pythonProcess.on("error", function (err) {
-      console.log("Error in spawned: " + err);
+      console.log("Error in spawned: ", err);
     });
 
-    pythonProcess.stdout.on("close", async () => {
+    pythonProcess.stdout.on("close", async (code) => {
+      console.log("closing code: ", code);
       const videoTitle = data.name + "/" + data.scene + "/" + title;
       console.log("video created", videoTitle);
       await readSendS3(videoTitle);
