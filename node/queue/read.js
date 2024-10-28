@@ -55,6 +55,10 @@ const receiveMessagesFromQueue = async () => {
       console.log(data.toString());
     });
 
+    pythonProcess.on("error", function (err) {
+      console.log("Error in spawned: " + err);
+    });
+
     pythonProcess.stdout.on("close", async () => {
       const videoTitle = data.name + "/" + data.scene + "/" + title;
       console.log("video created", videoTitle);
