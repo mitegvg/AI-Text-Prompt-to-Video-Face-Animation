@@ -69,11 +69,16 @@ const receiveMessagesFromQueue = async () => {
         cwd: path.resolve(__dirname, "../.."),
       }
     );
+    pythonProcess.stderr.on("data", (data) => {
+      //Here data is of type buffer
+      console.log(data.toString());
+    });
+
     pythonProcess.stdout.on("data", (data) => {
       console.log(data.toString());
     });
 
-    pythonProcess.on("error", function (err) {
+    pythonProcess.stdout.on("error", function (err) {
       console.log("Error in spawned: ", err);
     });
 
@@ -100,6 +105,10 @@ const receiveMessagesFromQueue = async () => {
       const responseDelete = await client.send(deleteCommand);
       console.log("deleted");
       setTimeout(() => receiveMessagesFromQueue(), 10000);
+    });
+
+    pythonProcess.on("exit", function (code) {
+      console.log("Exited with code ", code);
     });
   } catch (e) {
     console.log(e);
