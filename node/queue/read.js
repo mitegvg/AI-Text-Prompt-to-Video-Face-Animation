@@ -59,10 +59,16 @@ const receiveMessagesFromQueue = async () => {
 
     await createSound(data.text, "Chris Hemsworth");
     console.log("location", path.resolve(__dirname, "../../main_end2end.py"));
-    const pythonProcess = spawn("python", [
-      path.resolve(__dirname, "../../main_end2end.py"),
-      "--jpg=" + data.name + "-" + data.scene + "-poster.jpg",
-    ]);
+    const pythonProcess = spawn(
+      "python",
+      [
+        "main_end2end.py",
+        "--jpg=" + data.name + "-" + data.scene + "-poster.jpg",
+      ],
+      {
+        cwd: path.resolve(__dirname, "../.."),
+      }
+    );
     pythonProcess.stdout.on("data", (data) => {
       console.log(data.toString());
     });
