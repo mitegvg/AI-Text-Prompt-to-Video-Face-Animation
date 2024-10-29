@@ -58,7 +58,7 @@ const receiveMessagesFromQueue = async () => {
     }
 
     await createSound(data.text, "Chris Hemsworth");
-    console.log("location", path.resolve(__dirname, "./main_end2end.py"));
+    console.log("location", path.resolve(__dirname, "../../main_end2end.py"));
     const pythonProcess = spawn("python", [
       path.resolve(__dirname, "../../main_end2end.py"),
       "--jpg=" + data.name + "-" + data.scene + "-poster.jpg",
@@ -73,6 +73,14 @@ const receiveMessagesFromQueue = async () => {
 
     pythonProcess.stdout.on("close", async (code) => {
       console.log("closing code: ", code);
+      const promtExists = fs.existsSync(
+        path.resolve(__dirname, "../../examples/output/prompt.mp4")
+      );
+      if (!promtExists) {
+        console.log("file not found");
+        setTimeout(() => receiveMessagesFromQueue(), 10000);
+        return;
+      }
       const videoTitle = data.name + "/" + data.scene + "/" + title;
       console.log("video created", videoTitle);
       await readSendS3(videoTitle);
