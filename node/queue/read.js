@@ -3,11 +3,11 @@ const {
   ReceiveMessageCommand,
   DeleteMessageCommand,
 } = require("@aws-sdk/client-sqs"); // ES Modules import
-const createSound = require("../polly");
 const path = require("path");
 const spawn = require("child_process").spawn;
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const fs = require("fs");
+const { getSoundFromExternalSource } = require("./getSoundFromExternalSource");
 // const { SQSClient, ReceiveMessageCommand } = require("@aws-sdk/client-sqs"); // CommonJS import
 
 const REGION = "us-east-1"; //e.g. "us-east-1"
@@ -57,7 +57,10 @@ const receiveMessagesFromQueue = async () => {
       return;
     }
 
-    await createSound(data.text, "Chris Hemsworth");
+    const url = `${process.env.STORAGE_ENDPOINT}/${
+      data.id
+    }-${encodeURIComponent(title)}.mp3`;
+    await getSoundFromExternalSource(url);
     console.log("location", path.resolve(__dirname, "../../main_end2end.py"));
     const pythonProcess = spawn(
       "/opt/conda/envs/face_anim/bin/python",
