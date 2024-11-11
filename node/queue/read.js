@@ -15,6 +15,9 @@ const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
 const QUEUE_URL = process.env.QUEUE_URL;
 const BUCKET_NAME = process.env.BUCKET_NAME;
+const VISIBILITY_TIMEOUT_SECONDS =
+  process.env.VISIBILITY_TIMEOUT_SECONDS || 500;
+const GET_MESSAGE_TIMEOUT_MS = process.env.GET_MESSAGE_TIMEOUT_MS || 2000;
 
 const receiveMessagesFromQueue = async () => {
   try {
@@ -32,7 +35,7 @@ const receiveMessagesFromQueue = async () => {
       MaxNumberOfMessages: 1,
       MessageAttributeNames: ["All"],
       QueueUrl: queueURL,
-      VisibilityTimeout: 10000,
+      VisibilityTimeout: VISIBILITY_TIMEOUT_SECONDS,
       WaitTimeSeconds: 0,
     };
     const command = new ReceiveMessageCommand(input);
@@ -40,7 +43,7 @@ const receiveMessagesFromQueue = async () => {
 
     if (!response.Messages || response.Messages.length === 0) {
       console.log("No messages found");
-      setTimeout(() => receiveMessagesFromQueue(), 10000);
+      setTimeout(() => receiveMessagesFromQueue(), GET_MESSAGE_TIMEOUT_MS);
       return;
     }
     const data = JSON.parse(response.Messages[0].Body);
@@ -92,7 +95,7 @@ const receiveMessagesFromQueue = async () => {
       );
       if (!promtExists) {
         console.log("file not found");
-        setTimeout(() => receiveMessagesFromQueue(), 10000);
+        setTimeout(() => receiveMessagesFromQueue(), GET_MESSAGE_TIMEOUT_MS);
         return;
       }
       const videoTitle = data.name + "/" + data.scene + "/" + title;
@@ -107,7 +110,7 @@ const receiveMessagesFromQueue = async () => {
       const deleteCommand = new DeleteMessageCommand(deleteParams);
       const responseDelete = await client.send(deleteCommand);
       console.log("deleted");
-      setTimeout(() => receiveMessagesFromQueue(), 10000);
+      setTimeout(() => receiveMessagesFromQueue(), GET_MESSAGE_TIMEOUT_MS);
     });
 
     pythonProcess.on("exit", function (code) {
@@ -115,7 +118,7 @@ const receiveMessagesFromQueue = async () => {
     });
   } catch (e) {
     console.log(e);
-    setTimeout(() => receiveMessagesFromQueue(), 10000);
+    setTimeout(() => receiveMessagesFromQueue(), GET_MESSAGE_TIMEOUT_MS);
   }
 };
 
