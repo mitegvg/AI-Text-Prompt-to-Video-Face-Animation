@@ -48,6 +48,16 @@ const receiveMessagesFromQueue = async () => {
     }
     const data = JSON.parse(response.Messages[0].Body);
     console.log("PROCESSING -> ", response.Messages[0].MessageId);
+
+    // delete message from queue
+    var deleteParams = {
+      QueueUrl: queueURL,
+      ReceiptHandle: response.Messages[0].ReceiptHandle,
+    };
+
+    const deleteCommand = new DeleteMessageCommand(deleteParams);
+    const responseDelete = await client.send(deleteCommand);
+
     const title = data.text.replaceAll(" ", "-");
     const image = fs.existsSync(
       path.resolve(
@@ -57,6 +67,7 @@ const receiveMessagesFromQueue = async () => {
     );
     if (!image) {
       console.log("image not found");
+      setTimeout(() => receiveMessagesFromQueue(), GET_MESSAGE_TIMEOUT_MS);
       return;
     }
 
@@ -64,7 +75,7 @@ const receiveMessagesFromQueue = async () => {
       data.id
     }-${encodeURIComponent(title)}.mp3`;
     await getSoundFromExternalSource(url);
-    console.log("location", path.resolve(__dirname, "../../main_end2end.py"));
+
     const pythonProcess = spawn(
       "/opt/conda/envs/face_anim/bin/python",
       [
@@ -102,19 +113,12 @@ const receiveMessagesFromQueue = async () => {
       console.log("video created", videoTitle);
       await readSendS3(videoTitle);
 
-      var deleteParams = {
-        QueueUrl: queueURL,
-        ReceiptHandle: response.Messages[0].ReceiptHandle,
-      };
-
-      const deleteCommand = new DeleteMessageCommand(deleteParams);
-      const responseDelete = await client.send(deleteCommand);
-      console.log("deleted");
       setTimeout(() => receiveMessagesFromQueue(), GET_MESSAGE_TIMEOUT_MS);
     });
 
     pythonProcess.on("exit", function (code) {
       console.log("Exited with code ", code);
+      setTimeout(() => receiveMessagesFromQueue(), GET_MESSAGE_TIMEOUT_MS);
     });
   } catch (e) {
     console.log(e);
