@@ -28,12 +28,14 @@ async function getSoundFromExternalSource(url) {
 
           response.pipe(file);
           file.on("finish", async () => {
-            console.log("finished");
+            console.log("finished downloading");
             file.close();
             try {
               await convertMp3ToWav(filePath, wavFilePath);
+              console.log("successfully converted to wav");
               resolve(wavFilePath);
             } catch (error) {
+              console.log("error converting mp3 to wav", error);
               reject(error);
             }
           });
@@ -63,19 +65,24 @@ async function getSoundFromExternalSource(url) {
 
 function convertMp3ToWav(mp3Path, wavPath) {
   return new Promise((resolve, reject) => {
+    const promtExists = fs.existsSync(wavPath);
+    if (promtExists) {
+      console.log("removed existing file");
+      fs.unlinkSync(wavPath);
+    }
     const command = `ffmpeg -i "${mp3Path}" -acodec pcm_s16le -ac 1 -ar 44100 "${wavPath}"`;
     exec(command, (error, stdout, stderr) => {
       if (error) {
         console.log(error);
-        resolve();
+        reject(error);
         return;
       }
       if (stderr) {
         console.log(stderr);
-        resolve();
+        resolve(stderr);
         return;
       }
-      resolve();
+      resolve(stdout);
     });
   });
 }
