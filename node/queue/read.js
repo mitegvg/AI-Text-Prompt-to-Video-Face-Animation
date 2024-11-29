@@ -57,6 +57,7 @@ const receiveMessagesFromQueue = async () => {
 
     const deleteCommand = new DeleteMessageCommand(deleteParams);
     const responseDelete = await client.send(deleteCommand);
+    console.log("Message deleted", responseDelete);
 
     const title = data.text.replaceAll(" ", "-");
     const image = fs.existsSync(
@@ -69,6 +70,17 @@ const receiveMessagesFromQueue = async () => {
       console.log("image not found");
       setTimeout(() => receiveMessagesFromQueue(), GET_MESSAGE_TIMEOUT_MS);
       return;
+    }
+
+    const wavFilePath = path.resolve(__dirname, `../../examples/prompt.wav`);
+    const mp3FilePath = path.resolve(__dirname, `../../examples/output.mp3`);
+    if (fs.existsSync(wavFilePath)) {
+      console.log("removed wav file");
+      fs.unlinkSync(wavFilePath);
+    }
+    if (fs.existsSync(mp3FilePath)) {
+      console.log("removed mp3 file");
+      fs.unlinkSync(mp3FilePath);
     }
 
     const url = `${process.env.STORAGE_ENDPOINT}/${
@@ -117,8 +129,7 @@ const receiveMessagesFromQueue = async () => {
     });
 
     pythonProcess.on("exit", function (code) {
-      console.log("Exited with code ", code);
-      setTimeout(() => receiveMessagesFromQueue(), GET_MESSAGE_TIMEOUT_MS);
+      console.log("Exited with code, most likely sentence is too short:", code);
     });
   } catch (e) {
     console.log(e);

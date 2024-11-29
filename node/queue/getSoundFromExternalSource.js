@@ -65,11 +65,6 @@ async function getSoundFromExternalSource(url) {
 
 function convertMp3ToWav(mp3Path, wavPath) {
   return new Promise((resolve, reject) => {
-    const promtExists = fs.existsSync(wavPath);
-    if (promtExists) {
-      console.log("removed existing file");
-      fs.unlinkSync(wavPath);
-    }
     const command = `ffmpeg -i "${mp3Path}" -acodec pcm_s16le -ac 1 -ar 44100 "${wavPath}"`;
     exec(command, (error, stdout, stderr) => {
       if (error) {
