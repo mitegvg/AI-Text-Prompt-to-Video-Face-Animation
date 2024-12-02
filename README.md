@@ -49,6 +49,10 @@ npm i
 
 There is a dockerfile, if you wish to create a complete image with all the needed libraries, and makes it much easier for you.
 
+## CUDA
+
+There is a cuda branch to use the CUDA Architecture. The branch also allows you to use SQS queues in AWS to orchistrate a more distributed system.
+
 ## Pre-trained Models
 
 Download the following pre-trained models to `examples/ckpt` folder for testing your own animation. (if you followed the previous step of setup.sh you don't need to do this again)
