@@ -40,7 +40,7 @@ const receiveMessagesFromQueue = async () => {
     const response = await client.send(command);
 
     if (!response.Messages || response.Messages.length === 0) {
-      console.log("No messages found");
+      console.log(`No messages found ${new Date()}`);
       setTimeout(() => receiveMessagesFromQueue(), 10000);
       return;
     }
