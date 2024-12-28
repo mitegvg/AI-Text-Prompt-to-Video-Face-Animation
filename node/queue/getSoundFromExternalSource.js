@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const { exec } = require("child_process");
 
-const MAX_RETRIES = 5;
+const MAX_RETRIES = 50;
 
 async function getSoundFromExternalSource(url) {
   const fileName = "prompt";
