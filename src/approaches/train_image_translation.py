@@ -15,6 +15,7 @@ from tensorboardX import SummaryWriter
 import time
 import numpy as np
 import cv2
+import torch.quantization
 import os, glob
 from src.dataset.image_translation.image_translation_dataset import vis_landmark_on_img, vis_landmark_on_img98, vis_landmark_on_img74
 
@@ -434,6 +435,34 @@ class Image_translation_block():
 
         print('Time - ffmpeg add audio:', time.time() - st, flush=True)
 
+    
+
+    def optimize_and_save_model(self, save_type, epoch):
+        try:
+            os.makedirs(os.path.join(self.opt_parser.ckpt_dir, self.opt_parser.name))
+        except:
+            pass
+
+        # Quantization
+        self.G.eval()
+        self.G.qconfig = torch.quantization.get_default_qconfig('fbgemm')
+        torch.quantization.prepare(self.G, inplace=True)
+        torch.quantization.convert(self.G, inplace=True)
+
+        # Pruning
+        parameters_to_prune = (
+            (self.G, 'weight'),
+        )
+        for module, param in parameters_to_prune:
+            torch.nn.utils.prune.l1_unstructured(module, name=param, amount=0.2)
+            torch.nn.utils.prune.remove(module, param)
+
+        if (self.opt_parser.write):
+            torch.save({
+                'G': self.G.state_dict(),
+                'opt': self.optimizer,
+                'epoch': epoch
+            }, os.path.join(self.opt_parser.ckpt_dir, self.opt_parser.name, 'ckpt_optimized_{}.pth'.format(save_type)))
 
 
 
