@@ -368,37 +368,41 @@ class Image_translation_block():
             os.system('rm tmp_{:04d}.mp4'.format(i))
 
 
-    def single_test(self, jpg=None, fls=None, filename=None, prefix='', grey_only=False, image_width = 1024, image_height = 1024):
-        import time
+    def single_test(self, jpg=None, fls=None, filename=None, prefix='', grey_only=False, image_width=1024, image_height=1024):
         st = time.time()
         self.G.eval()
-        
-        if(jpg is None):
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        if jpg is None:
             jpg = glob.glob1(self.opt_parser.single_test, '*.jpg')[0]
             jpg = cv2.imread(os.path.join(self.opt_parser.single_test, jpg))
 
-        if(fls is None):
+        if fls is None:
             fls = glob.glob1(self.opt_parser.single_test, '*.txt')[0]
             fls = np.loadtxt(os.path.join(self.opt_parser.single_test, fls))
             fls = fls * 95
             fls[:, 0::3] += 130
             fls[:, 1::3] += 80
 
-        writer = cv2.VideoWriter('out.mp4', cv2.VideoWriter_fourcc(*'mjpg'), 62.5, (image_width * 3, image_height))
+        use_cuda = cv2.cuda.getCudaEnabledDeviceCount() > 0
+        if use_cuda:
+            writer = cv2.cudacodec.createVideoWriter('out.mp4', cv2.cudacodec.VideoWriterParams(), cv2.VideoWriter_fourcc(*'H264'), 62.5, (image_width * 3, image_height))
+        else:
+            writer = cv2.VideoWriter('out.mp4', cv2.VideoWriter_fourcc(*'mjpg'), 62.5, (image_width * 3, image_height))
 
         print("Starting frame creation", flush=True)
         for i, frame in enumerate(fls):
-            print(i, flush=True)
+            print(f'{time.time()} - Frame {i}', flush=True)
             img_fl = np.ones(shape=(image_width, image_height, 3)) * 255
             fl = frame.astype(int)
             img_fl = vis_landmark_on_img(img_fl, np.reshape(fl, (68, 3)))
-            frame = np.concatenate((img_fl, jpg), axis=2).astype(np.float32)/255.0
+            # print(f'{time.time()} - Frame {i}', flush=True)
+            frame = np.concatenate((img_fl, jpg), axis=2).astype(np.float32) / 255.0
 
             image_in, image_out = frame.transpose((2, 0, 1)), np.zeros(shape=(3, image_width, image_height))
-            
-            image_in, image_out = torch.tensor(image_in, requires_grad=False), \
-                                  torch.tensor(image_out, requires_grad=False)
+            image_in, image_out = torch.tensor(image_in, requires_grad=False), torch.tensor(image_out, requires_grad=False)
 
+            # print(f'{time.time()} - Frame {i}', flush=True)
             image_in, image_out = image_in.reshape(-1, 6, image_width, image_height), image_out.reshape(-1, 3, image_width, image_height)
             image_in, image_out = image_in.to(device), image_out.to(device)
 
@@ -409,29 +413,31 @@ class Image_translation_block():
             g_out[g_out < 0] = 0
             ref_in = image_in[:, 3:6, :, :].cpu().detach().numpy().transpose((0, 2, 3, 1))
             fls_in = image_in[:, 0:3, :, :].cpu().detach().numpy().transpose((0, 2, 3, 1))
-            # g_out = g_out.cpu().detach().numpy().transpose((0, 3, 2, 1))
-            # g_out[g_out < 0] = 0
-            # ref_in = image_in[:, 3:6, :, :].cpu().detach().numpy().transpose((0, 3, 2, 1))
-            # fls_in = image_in[:, 0:3, :, :].cpu().detach().numpy().transpose((0, 3, 2, 1))
 
-            if(grey_only):
-                g_out_grey =np.mean(g_out, axis=3, keepdims=True)
+            print(f'{time.time()} - Frame {i}', flush=True)
+            if grey_only:
+                g_out_grey = np.mean(g_out, axis=3, keepdims=True)
                 g_out[:, :, :, 0:1] = g_out[:, :, :, 1:2] = g_out[:, :, :, 2:3] = g_out_grey
 
+            for j in range(g_out.shape[0]):
+                frame = np.concatenate((ref_in[j], g_out[j], fls_in[j]), axis=1) * 255.0
+                if use_cuda:
+                    gpu_frame = cv2.cuda_GpuMat()
+                    gpu_frame.upload(frame.astype(np.uint8))
+                    writer.write(gpu_frame)
+                else:
+                    writer.write(frame.astype(np.uint8))
 
-            for i in range(g_out.shape[0]):
-                frame = np.concatenate((ref_in[i], g_out[i], fls_in[i]), axis=1) * 255.0
-                writer.write(frame.astype(np.uint8))
-
+            print(f'{time.time()} - Frame {i}', flush=True)
         writer.release()
         print('Time - only video:', time.time() - st, flush=True)
 
-        if(filename is None):
+        if filename is None:
             filename = 'v'
         os.system('ffmpeg -loglevel error -y -i out.mp4 -i {} -pix_fmt yuv420p -strict -2 examples/full.mp4'.format(
-            'examples/'+filename))
-        
-        os.system(f'ffmpeg -i examples/full.mp4 -vf "crop={image_width}:{image_height}:{image_width}:0" examples/output/'+filename.replace('.wav', '.mp4'))
+            'examples/' + filename))
+
+        os.system(f'ffmpeg -i examples/full.mp4 -vf "crop={image_width}:{image_height}:{image_width}:0" examples/output/' + filename.replace('.wav', '.mp4'))
 
         print('Time - ffmpeg add audio:', time.time() - st, flush=True)
 
