@@ -385,10 +385,11 @@ class Image_translation_block():
             fls[:, 1::3] += 80
 
         use_cuda = cv2.cuda.getCudaEnabledDeviceCount() > 0
+        print('Use CUDA:', use_cuda)
         if use_cuda:
-            writer = cv2.cudacodec.createVideoWriter('out.mp4', cv2.cudacodec.VideoWriterParams(), cv2.VideoWriter_fourcc(*'H264'), 62.5, (image_width * 3, image_height))
+            writer = cv2.cudacodec.createVideoWriter('out.mp4', cv2.cudacodec.VideoWriterParams(), cv2.VideoWriter_fourcc(*'H264'), 62.5, (image_width, image_height))
         else:
-            writer = cv2.VideoWriter('out.mp4', cv2.VideoWriter_fourcc(*'mjpg'), 62.5, (image_width * 3, image_height))
+            writer = cv2.VideoWriter('out.mp4', cv2.VideoWriter_fourcc(*'mjpg'), 62.5, (image_width, image_height))
 
         print("Starting frame creation", flush=True)
         for i, frame in enumerate(fls):
@@ -396,23 +397,16 @@ class Image_translation_block():
             img_fl = np.ones(shape=(image_width, image_height, 3)) * 255
             fl = frame.astype(int)
             img_fl = vis_landmark_on_img(img_fl, np.reshape(fl, (68, 3)))
-            # print(f'{time.time()} - Frame {i}', flush=True)
             frame = np.concatenate((img_fl, jpg), axis=2).astype(np.float32) / 255.0
 
-            image_in, image_out = frame.transpose((2, 0, 1)), np.zeros(shape=(3, image_width, image_height))
-            image_in, image_out = torch.tensor(image_in, requires_grad=False), torch.tensor(image_out, requires_grad=False)
+            image_in = torch.tensor(frame.transpose((2, 0, 1)), requires_grad=False).reshape(-1, 6, image_width, image_height).to(device)
 
-            # print(f'{time.time()} - Frame {i}', flush=True)
-            image_in, image_out = image_in.reshape(-1, 6, image_width, image_height), image_out.reshape(-1, 3, image_width, image_height)
-            image_in, image_out = image_in.to(device), image_out.to(device)
 
             g_out = self.G(image_in)
             g_out = torch.tanh(g_out)
 
             g_out = g_out.cpu().detach().numpy().transpose((0, 2, 3, 1))
             g_out[g_out < 0] = 0
-            ref_in = image_in[:, 3:6, :, :].cpu().detach().numpy().transpose((0, 2, 3, 1))
-            fls_in = image_in[:, 0:3, :, :].cpu().detach().numpy().transpose((0, 2, 3, 1))
 
             print(f'{time.time()} - Frame {i}', flush=True)
             if grey_only:
@@ -420,15 +414,14 @@ class Image_translation_block():
                 g_out[:, :, :, 0:1] = g_out[:, :, :, 1:2] = g_out[:, :, :, 2:3] = g_out_grey
 
             for j in range(g_out.shape[0]):
-                frame = np.concatenate((ref_in[j], g_out[j], fls_in[j]), axis=1) * 255.0
+                middle_frame = g_out[j] * 255.0
                 if use_cuda:
-                    gpu_frame = cv2.cuda_GpuMat()
-                    gpu_frame.upload(frame.astype(np.uint8))
+                    gpu_frame = cv2.cuda.GpuMat()
+                    gpu_frame.upload(middle_frame.astype(np.uint8))
                     writer.write(gpu_frame)
                 else:
-                    writer.write(frame.astype(np.uint8))
+                    writer.write(middle_frame.astype(np.uint8))
 
-            print(f'{time.time()} - Frame {i}', flush=True)
         writer.release()
         print('Time - only video:', time.time() - st, flush=True)
 
