@@ -1,6 +1,5 @@
 # AI Text Prompt to Video Face Animation
 
-![img](doc/teaser.gif)
 
 - Developed a face animation pipeline using MakeItTalk Adobe research Python scripts with pre-trained models.
 - Adjusted model inference from CUDA to CPU for broader hardware compatibility, so it's available on MacOS
